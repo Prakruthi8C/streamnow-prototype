@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamNow — DPDP Consent &amp; Privacy Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213D;
+    --paper:#F7F5F0;
+    --teal:#2A9D8F;
+    --teal-dark:#1E7268;
+    --clay:#E76F51;
+    --slate:#6B7280;
+    --mint:#DDEFE7;
+    --line:#E2E0D8;
+    --white:#FFFFFF;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);font-family:'Inter',sans-serif;color:var(--ink);}
+  .stage{
+    display:flex; gap:48px; align-items:flex-start; justify-content:center;
+    padding:48px 24px; max-width:1200px; margin:0 auto; flex-wrap:wrap;
+  }
+  .phone-wrap{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .phone{
+    width:375px; height:780px; background:var(--white); border-radius:36px;
+    border:8px solid var(--ink); overflow:hidden; position:relative;
+    box-shadow:0 30px 60px rgba(20,33,61,0.18);
+  }
+  .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:22px; background:var(--ink); border-radius:0 0 14px 14px; z-index:50;}
+  .screen{ width:100%; height:100%; overflow-y:auto; display:none; flex-direction:column; }
+  .screen.active{ display:flex; }
+  .topbar{ padding:36px 20px 12px; display:flex; align-items:center; gap:10px; }
+  .topbar .back{ cursor:pointer; font-size:20px; color:var(--slate); width:28px;}
+  .topbar h2{ font-family:'Fraunces',serif; font-weight:500; font-size:19px; margin:0; }
+  .content{ padding:0 20px 24px; flex:1; }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; font-size:11px; color:var(--teal-dark); margin-bottom:8px; }
+  h1.hero{ font-family:'Fraunces',serif; font-weight:500; font-size:28px; line-height:1.2; margin:0 0 10px; }
+  p.sub{ color:var(--slate); font-size:14.5px; line-height:1.55; margin:0 0 24px; }
+  .btn{
+    display:block; width:100%; text-align:center; padding:15px; border-radius:12px;
+    font-weight:600; font-size:15px; cursor:pointer; border:none; font-family:'Inter',sans-serif;
+    transition:transform .12s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{ background:var(--teal); color:white; }
+  .btn-primary:hover{ background:var(--teal-dark); }
+  .btn-ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .btn-danger{ background:var(--clay); color:white; }
+  .btn-text{ background:none; color:var(--teal-dark); font-weight:600; padding:10px; }
+  .stack{ display:flex; flex-direction:column; gap:10px; margin-top:20px;}
+  .card{ background:var(--mint); border-radius:var(--radius); padding:18px; margin-bottom:12px; }
+  .card.outline{ background:white; border:1.5px solid var(--line); }
+  .row{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .toggle-row{ display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); gap:12px;}
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-label{ font-weight:600; font-size:14.5px; }
+  .toggle-desc{ font-size:12.5px; color:var(--slate); margin-top:3px; line-height:1.4; }
+  .switch{ position:relative; width:44px; height:26px; flex:0 0 44px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; inset:0; background:#D1D5DB; border-radius:20px; cursor:pointer; transition:.2s; }
+  .slider:before{ content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; background:white; border-radius:50%; transition:.2s; }
+  input:checked + .slider{ background:var(--teal); }
+  input:checked + .slider:before{ transform:translateX(18px); }
+  input:disabled + .slider{ opacity:0.45; cursor:not-allowed; }
+  .locked-tag{ font-family:'IBM Plex Mono',monospace; font-size:10px; background:var(--ink); color:white; padding:2px 7px; border-radius:6px; }
+  .list-item{ display:flex; align-items:center; justify-content:space-between; padding:15px 0; border-bottom:1px solid var(--line); cursor:pointer; }
+  .list-item:last-child{ border-bottom:none; }
+  .list-item .l{ font-weight:600; font-size:14.5px; }
+  .list-item .d{ font-size:12px; color:var(--slate); margin-top:2px; }
+  .chev{ color:var(--slate); }
+  .pill{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:3px 9px; border-radius:20px; background:var(--mint); color:var(--teal-dark); font-weight:500; }
+  .pill.warn{ background:#FDEDE8; color:var(--clay); }
+  .avatar-circle{ width:64px; height:64px; border-radius:50%; background:var(--ink); color:white; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:24px; margin:0 auto 12px; }
+  .center{ text-align:center; }
+  .icon-big{ font-size:44px; margin-bottom:14px; }
+  .tabbar{ display:flex; justify-content:space-around; padding:14px 0; border-top:1px solid var(--line); background:white; }
+  .tabbar .tab{ font-size:11px; color:var(--slate); text-align:center; }
+  .tabbar .tab.active{ color:var(--teal-dark); font-weight:600; }
+  .feed-card{ height:100px; border-radius:14px; background:linear-gradient(135deg,var(--ink),#2c3e6b); margin-bottom:14px; }
+  .segment{ display:flex; gap:0; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:20px;}
+  .segment button{ flex:1; padding:10px; border:none; background:white; font-weight:600; font-size:13px; cursor:pointer; color:var(--slate);}
+  .segment button.active{ background:var(--ink); color:white; }
+  .checklist-item{ display:flex; gap:10px; align-items:flex-start; padding:10px 0; font-size:13.5px; }
+  .checkbox{ width:18px; height:18px; border-radius:5px; border:1.5px solid var(--teal); flex:0 0 18px; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--teal); background:var(--mint);}
+
+  /* annotation rail — the signature element */
+  .rail{ width:260px; padding-top:8px; }
+  .rail-title{ font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--teal-dark); margin-bottom:10px; }
+  .note{ background:white; border-left:3px solid var(--teal); border-radius:0 10px 10px 0; padding:14px 16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(20,33,61,0.05); }
+  .note b{ font-family:'Fraunces',serif; font-weight:500; font-size:14.5px; display:block; margin-bottom:4px; }
+  .note p{ font-size:12.5px; color:var(--slate); line-height:1.55; margin:0; }
+  .note .tag{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--clay); text-transform:uppercase; letter-spacing:0.05em; }
+  .top-label{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate); margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="phone-wrap">
+    <div class="top-label">Screen 1 → tap through the happy path →</div>
+    <div class="phone">
+      <div class="notch"></div>
+
+      <!-- SCREEN: SPLASH -->
+      <div class="screen active" id="s-splash">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">▶</div>
+          <h1 class="hero">StreamNow</h1>
+          <p class="sub">Watch. Learn. Share.<br>Built for India — and India's data laws.</p>
+          <button class="btn btn-primary" onclick="go('s-age')">Get started</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: AGE -->
+      <div class="screen" id="s-age">
+        <div class="topbar"><span class="back" onclick="go('s-splash')">←</span><h2>Create account</h2></div>
+        <div class="content">
+          <div class="eyebrow">Step 1 of 3</div>
+          <h1 class="hero">What's your date of birth?</h1>
+          <p class="sub">We ask this first so we can give you the right experience and the right consent from the start — required under India's DPDP Act.</p>
+          <div class="card outline">
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Date of birth</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;">14 / 03 / 2010</div>
+          </div>
+          <p class="sub" style="font-size:12px;">Age at signup: <b>16</b> — under 18, so a parent/guardian will need to verify and consent.</p>
+          <button class="btn btn-primary" onclick="go('s-parent-intro')">Continue</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: PARENT INTRO -->
+      <div class="screen" id="s-parent-intro">
+        <div class="topbar"><span class="back" onclick="go('s-age')">←</span><h2>Parental consent</h2></div>
+        <div class="content">
+          <div class="eyebrow">Step 2 of 3</div>
+          <h1 class="hero">Let's get your parent's OK</h1>
+          <p class="sub">Because you're under 18, DPDP requires a verifiable parent or guardian to approve your account before we can personalise anything or show you ads.</p>
+          <div class="card">
+            <div class="row"><span style="font-weight:600;font-size:14px;">What happens next</span></div>
+            <div class="checklist-item"><div class="checkbox">✓</div>We'll text a one-time link to your parent's phone</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>They approve or decline in under a minute</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>You get a safe, non-personalised experience until they do</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-parent-phone')">Send request to parent</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: PARENT PHONE -->
+      <div class="screen" id="s-parent-phone">
+        <div class="topbar"><span class="back" onclick="go('s-parent-intro')">←</span><h2>Parent's contact</h2></div>
+        <div class="content">
+          <p class="sub">Enter a phone number your parent can access right now.</p>
+          <div class="card outline">
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Parent's mobile number</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;">+91 98••• •• 214</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-parent-verify')">Send verification link</button>
+          <button class="btn btn-text" onclick="go('s-otp-error')">(simulate: delivery failed)</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: PARENT VERIFY (simulating parent's side) -->
+      <div class="screen" id="s-parent-verify">
+        <div class="topbar"><h2>Parent view</h2></div>
+        <div class="content center">
+          <div class="pill" style="margin-bottom:16px;">Simulating your parent's screen</div>
+          <div class="card" style="text-align:left;">
+            <b style="font-family:'Fraunces',serif;font-size:15px;">Priya wants to join StreamNow</b>
+            <p class="sub" style="margin:8px 0 16px;">Your child has requested an account. As required by India's DPDP Act, we need your consent before creating it.</p>
+            <div class="toggle-row"><div><div class="toggle-label" id="lbl-account">Allow account creation</div></div><label class="switch"><input type="checkbox" checked aria-labelledby="lbl-account"><span class="slider"></span></label></div>
+            <div class="toggle-row"><div><div class="toggle-label" id="lbl-personalise">Allow personalised recommendations</div><div class="toggle-desc">Uses watch history to suggest videos</div></div><label class="switch"><input type="checkbox" aria-labelledby="lbl-personalise"><span class="slider"></span></label></div>
+            <div class="toggle-row"><div><div class="toggle-label" id="lbl-ads">Allow ads based on activity</div><div class="toggle-desc">Not permitted for under-18s under DPDP — locked off</div></div><label class="switch"><input type="checkbox" disabled aria-labelledby="lbl-ads"><span class="slider"></span></label><span class="locked-tag">🔒 Locked</span></div>
+          </div>
+          <div class="stack">
+            <button class="btn btn-primary" onclick="go('s-consent-adult')">Approve as parent</button>
+            <button class="btn btn-text" style="color:var(--clay);" onclick="go('s-parent-decline')">Decline this request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: PARENT DECLINES (new branch) -->
+      <div class="screen" id="s-parent-decline">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">✕</div>
+          <h1 class="hero">Request declined</h1>
+          <p class="sub">Priya's account won't be created. She'll see a message explaining a parent needs to approve before continuing — no data has been collected or stored.</p>
+          <button class="btn btn-ghost" onclick="go('s-splash')">Close</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: OTP FAILURE (error state) -->
+      <div class="screen" id="s-otp-error">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big" style="color:var(--clay);">⚠</div>
+          <h1 class="hero">Couldn't deliver the code</h1>
+          <p class="sub">We weren't able to send a verification link to that number. Double-check it, or try email instead.</p>
+          <div class="stack">
+            <button class="btn btn-primary" onclick="go('s-parent-phone')">Try again</button>
+            <button class="btn btn-ghost" onclick="go('s-parent-phone')">Use email instead</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: MAIN CONSENT NOTICE (also entry for "I'm 18+" path) -->
+      <div class="screen" id="s-consent-adult">
+        <div class="topbar"><h2>Before you start</h2></div>
+        <div class="content">
+          <div class="eyebrow">Step 3 of 3 · Consent</div>
+          <h1 class="hero">Your data, your choice</h1>
+          <p class="sub">Here's exactly what we'd like to use, and why. You can change any of this later in Privacy settings.</p>
+          <div class="card outline">
+            <div class="toggle-row">
+              <div><div class="toggle-label">Essential account data</div><div class="toggle-desc">Email, watch progress — needed to run your account</div></div>
+              <span class="locked-tag">Required</span>
+            </div>
+            <div class="toggle-row">
+              <div><div class="toggle-label">Personalised recommendations</div><div class="toggle-desc">Uses what you watch to suggest more</div></div>
+              <label class="switch"><input type="checkbox" checked id="tg-personalise"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div><div class="toggle-label">Ads based on activity</div><div class="toggle-desc">Off by default. Restricted for minors under DPDP.</div></div>
+              <label class="switch"><input type="checkbox" id="tg-ads"><span class="slider"></span></label>
+            </div>
+          </div>
+          <p class="sub" style="font-size:11.5px;">By continuing you agree to our <span style="color:var(--teal-dark);font-weight:600;">Privacy Notice</span>, written in plain language, available any time.</p>
+          <button class="btn btn-primary" onclick="go('s-home')">Confirm and continue</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: HOME -->
+      <div class="screen" id="s-home">
+        <div class="topbar"><h2>Home</h2></div>
+        <div class="content">
+          <div class="card" style="background:var(--mint);">
+            <div class="row"><b style="font-family:'Fraunces',serif;">Welcome to StreamNow 🎬</b></div>
+            <p class="sub" style="margin:6px 0 0;">Your consent is active. Manage it anytime from Privacy Centre.</p>
+          </div>
+          <div class="feed-card"></div>
+          <div class="feed-card"></div>
+          <div class="feed-card"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active">⌂<br>Home</div>
+          <div class="tab">🔍<br>Search</div>
+          <div class="tab" onclick="go('s-privacy-home')" style="cursor:pointer;">🛡<br>Privacy</div>
+          <div class="tab">👤<br>Profile</div>
+        </div>
+      </div>
+
+      <!-- SCREEN: PRIVACY CENTRE HOME -->
+      <div class="screen" id="s-privacy-home">
+        <div class="topbar"><span class="back" onclick="go('s-home')">←</span><h2>Privacy Centre</h2></div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><b>Consent status</b><span class="pill">Active · Renewed today</span></div>
+            <p class="sub" style="margin:8px 0 0;">Last updated 03 Jul 2026. You're in control of everything below.</p>
+          </div>
+          <div class="list-item" onclick="go('s-manage-consent')">
+            <div><div class="l">Manage consent</div><div class="d">Turn personalisation and ads on/off</div></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="list-item" onclick="go('s-consent-history')">
+            <div><div class="l">Consent history</div><div class="d">Every change, timestamped — your proof record</div></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="list-item" onclick="go('s-download')">
+            <div><div class="l">Download my data</div><div class="d">Get a copy of everything we hold</div></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="list-item" onclick="go('s-correct')">
+            <div><div class="l">Correct my data</div><div class="d">Fix inaccurate profile info</div></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="list-item" onclick="go('s-delete-intro')">
+            <div><div class="l">Delete my account</div><div class="d">Permanently erase your data</div></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="list-item" onclick="go('s-grievance')">
+            <div><div class="l">Contact our Grievance Officer</div><div class="d">Required under DPDP — raise a concern directly</div></div>
+            <span class="chev">›</span>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab" onclick="go('s-home')" style="cursor:pointer;">⌂<br>Home</div>
+          <div class="tab">🔍<br>Search</div>
+          <div class="tab active">🛡<br>Privacy</div>
+          <div class="tab">👤<br>Profile</div>
+        </div>
+      </div>
+
+      <!-- SCREEN: MANAGE CONSENT -->
+      <div class="screen" id="s-manage-consent">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Manage consent</h2></div>
+        <div class="content">
+          <p class="sub">Switch anything off — nothing else changes. Withdrawal is as easy as giving consent, as required by DPDP.</p>
+          <div class="card outline">
+            <div class="toggle-row"><div><div class="toggle-label">Personalised recommendations</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="toggle-row"><div><div class="toggle-label">Ads based on activity</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+            <div class="toggle-row"><div><div class="toggle-label">Watch history storage</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-consent-saved')">Save changes</button>
+        </div>
+      </div>
+
+      <div class="screen" id="s-consent-saved">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">✓</div>
+          <h1 class="hero">Preferences updated</h1>
+          <p class="sub">Recommendations will stop using your recent activity within 24 hours.</p>
+          <button class="btn btn-ghost" onclick="go('s-privacy-home')">Back to Privacy Centre</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: CONSENT HISTORY / AUDIT LOG (new) -->
+      <div class="screen" id="s-consent-history">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Consent history</h2></div>
+        <div class="content">
+          <p class="sub">Every consent change, exactly as it happened. This is the record we — and you — can point to if anyone ever asks "did they actually consent?"</p>
+          <div class="card outline">
+            <div class="toggle-row"><div><div class="toggle-label">03 Jul 2026, 8:12 PM</div><div class="toggle-desc">Personalised recommendations → turned OFF</div></div></div>
+            <div class="toggle-row"><div><div class="toggle-label">14 Mar 2026, 9:00 AM</div><div class="toggle-desc">Account created · Parent consent approved by Meena S.</div></div></div>
+            <div class="toggle-row"><div><div class="toggle-label">14 Mar 2026, 8:58 AM</div><div class="toggle-desc">Ads personalisation → locked OFF (under-18 guardrail)</div></div></div>
+          </div>
+          <button class="btn btn-ghost" onclick="go('s-download')">Export full history</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: GRIEVANCE OFFICER (new) -->
+      <div class="screen" id="s-grievance">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Grievance Officer</h2></div>
+        <div class="content">
+          <p class="sub">Under India's DPDP Act, every user can raise a data concern directly with our named Grievance Officer — not just general support.</p>
+          <div class="card outline">
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Grievance Officer</div>
+            <div style="font-weight:600;margin-bottom:14px;">Anjali Rao, Data Protection Office</div>
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Response commitment</div>
+            <div style="font-weight:600;">Acknowledged within 48 hours</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-grievance-sent')">Raise a concern</button>
+        </div>
+      </div>
+      <div class="screen" id="s-grievance-sent">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">✓</div>
+          <h1 class="hero">Concern submitted</h1>
+          <p class="sub">Reference #GR-40217. You'll hear back within 48 hours.</p>
+          <button class="btn btn-ghost" onclick="go('s-privacy-home')">Back to Privacy Centre</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: DOWNLOAD DATA -->
+      <div class="screen" id="s-download">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Download my data</h2></div>
+        <div class="content">
+          <p class="sub">We'll package your profile, watch history, and consent history into one file.</p>
+          <div class="card outline">
+            <div class="checklist-item"><div class="checkbox">✓</div>Profile & account info</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>Watch & search history</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>Consent history & timestamps</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-download-progress')">Request download</button>
+        </div>
+      </div>
+
+      <div class="screen" id="s-download-progress">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">⏳</div>
+          <h1 class="hero">Preparing your file</h1>
+          <p class="sub">This usually takes a few minutes. We'll notify you the moment it's ready — it'll stay downloadable for 7 days.</p>
+          <button class="btn btn-primary" onclick="go('s-download-ready')">(simulate: file ready)</button>
+        </div>
+      </div>
+
+      <div class="screen" id="s-download-ready">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">📦</div>
+          <h1 class="hero">Your data is ready</h1>
+          <p class="sub">A .zip file with your data, in a readable format.</p>
+          <button class="btn btn-primary" onclick="go('s-privacy-home')">Download .zip</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: CORRECT DATA -->
+      <div class="screen" id="s-correct">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Correct my data</h2></div>
+        <div class="content">
+          <div class="card outline">
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Name</div>
+            <div style="font-weight:600;margin-bottom:14px;">Priya Sharma</div>
+            <div style="font-size:13px;color:var(--slate);margin-bottom:6px;">Date of birth</div>
+            <div style="font-weight:600;">14 Mar 2010</div>
+          </div>
+          <button class="btn btn-primary" onclick="go('s-correct-saved')">Save corrections</button>
+        </div>
+      </div>
+      <div class="screen" id="s-correct-saved">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">✓</div>
+          <h1 class="hero">Details updated</h1>
+          <button class="btn btn-ghost" onclick="go('s-privacy-home')">Back to Privacy Centre</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: DELETE ACCOUNT -->
+      <div class="screen" id="s-delete-intro">
+        <div class="topbar"><span class="back" onclick="go('s-privacy-home')">←</span><h2>Delete account</h2></div>
+        <div class="content">
+          <p class="sub">This permanently erases your profile, history, and consent records. This can't be undone.</p>
+          <div class="card outline">
+            <div class="checklist-item"><div class="checkbox">✓</div>Removed from active systems in 30 days</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>Purged from backups within 90 days</div>
+            <div class="checklist-item"><div class="checkbox">✓</div>You can cancel anytime in the 30-day window</div>
+          </div>
+          <button class="btn btn-danger" onclick="go('s-delete-confirm')">Continue to delete</button>
+        </div>
+      </div>
+      <div class="screen" id="s-delete-confirm">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big" style="color:var(--clay);">⚠</div>
+          <h1 class="hero">Delete account permanently?</h1>
+          <p class="sub">Type DELETE below to confirm. This action cannot be undone once the 30-day window closes.</p>
+          <div class="card outline center" style="font-family:'IBM Plex Mono',monospace;letter-spacing:2px;">DELETE</div>
+          <div class="stack">
+            <button class="btn btn-danger" onclick="go('s-delete-done')">Yes, delete my account</button>
+            <button class="btn btn-text" onclick="go('s-privacy-home')">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="screen" id="s-delete-done">
+        <div class="content center" style="display:flex;flex-direction:column;justify-content:center;height:100%;">
+          <div class="icon-big">✓</div>
+          <h1 class="hero">Deletion scheduled</h1>
+          <p class="sub">Your account will be permanently deleted on <b>2 Aug 2026</b>. Changed your mind? Log back in before then to cancel.</p>
+          <button class="btn btn-ghost" onclick="go('s-splash')">Done</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ANNOTATION RAIL -->
+  <div class="rail">
+    <div class="rail-title">PM rationale — live</div>
+    <div id="rail-notes"></div>
+  </div>
+</div>
+
+<script>
+const notes = {
+  's-splash': [{t:'Why start here', tag:'framing', d:'No data collected yet. Establishes trust before any ask — nothing is requested until it\'s needed.'}],
+  's-age': [{t:'Age-first, by design', tag:'DPDP · children', d:'Asking DOB before anything else is the single decision that unlocks correct DPDP handling downstream — it is impossible to comply later if you skip this.'}],
+  's-parent-intro': [{t:'Verifiable parental consent', tag:'DPDP · children', d:'DPDP requires *verifiable* consent for under-18s, not just a checkbox. We frame it as a fast, guided step rather than a wall.'}],
+  's-parent-phone': [{t:'Why phone, not email', tag:'trade-off', d:'OTP-to-phone is faster to verify than email and harder to fake than a birthdate re-entry — chosen for verifiability over friction.'}],
+  's-parent-verify': [{t:'Ads locked off for minors', tag:'DPDP · guardrail', d:'Behavioural ads toggle is disabled, not just defaulted off — parents cannot accidentally enable a DPDP-restricted setting.'}],
+  's-consent-adult': [{t:'Granular, not bundled', tag:'DPDP · consent', d:'Each purpose is a separate toggle. Bundling "accept all" into one switch is the classic dark pattern DPDP\'s purpose-limitation clause is meant to kill.'}],
+  's-home': [{t:'Consent is visible, not buried', tag:'trust', d:'A persistent Privacy tab in the main nav — not three menus deep — signals control is a first-class feature, not a settings afterthought.'}],
+  's-privacy-home': [{t:'One control centre', tag:'IA', d:'All DPDP rights — access, correction, erasure, consent withdrawal — live in one place so users don\'t need to know legal terms to find them.'}],
+  's-manage-consent': [{t:'Withdrawal = same ease as consent', tag:'DPDP · Sec 6(4)', d:'DPDP explicitly requires withdrawal to be as easy as giving consent. Same toggle UI, same screen depth, no retention dark patterns.'}],
+  's-consent-saved': [{t:'Confirms, sets expectation', tag:'copy', d:'Tells the user *when* the change takes effect — avoids the "did that actually work?" trust gap.'}],
+  's-download': [{t:'Right to access, made concrete', tag:'DPDP · Sec 11', d:'Shows exactly what\'s included before requesting — no surprise mystery export.'}],
+  's-download-ready': [{t:'7-day window', tag:'security', d:'Time-boxed download link limits exposure if the link is shared or a device is lost.'}],
+  's-correct': [{t:'Right to correction', tag:'DPDP · Sec 12', d:'Self-serve correction avoids a support-ticket bottleneck for a right the law guarantees.'}],
+  's-delete-intro': [{t:'Plain-language timeline', tag:'DPDP · Sec 12(3)', d:'States real backup-purge timelines instead of a vague "your data will be deleted" — sets honest expectations.'}],
+  's-delete-confirm': [{t:'Friction is intentional here', tag:'trade-off', d:'The one place we *add* friction on purpose: irreversible action deserves a deliberate confirm, unlike consent changes which should stay easy.'}],
+  's-delete-done': [{t:'Grace period stated up front', tag:'DPDP', d:'30-day undo window is disclosed at the moment of action, not hidden in a policy doc.'}],
+  's-parent-decline': [{t:'Decline is a real outcome, not an edge case', tag:'fix v2', d:'The original happy-path skipped this. A parent saying no is common enough that the flow needs a real, honest screen for it — not a dead end.'}],
+  's-otp-error': [{t:'Error state with a real fallback', tag:'fix v2', d:'Not just \"something went wrong\" — offers email as an alternative verification path, matching the fallback named in the risk analysis.'}],
+  's-consent-history': [{t:'Proof, not just a promise', tag:'fix v2 · trust', d:'This is the single highest-leverage trust screen: it turns \"we say we\'re compliant\" into \"here\'s the timestamped record\" — for the user and for a regulator.'}],
+  's-grievance': [{t:'DPDP requires this contact point', tag:'fix v2 · DPDP', d:'A named Grievance Officer with a response SLA was missing from v1 — DPDP requires this be accessible, not buried in generic support.'}],
+};
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  renderNotes(id);
+  document.querySelector('.phone').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderNotes(id){
+  const rail = document.getElementById('rail-notes');
+  rail.innerHTML = '';
+  (notes[id]||[]).forEach(n=>{
+    const div = document.createElement('div');
+    div.className = 'note';
+    div.innerHTML = `<span class="tag">${n.tag}</span><b>${n.t}</b><p>${n.d}</p>`;
+    rail.appendChild(div);
+  });
+}
+renderNotes('s-splash');
+</script>
+</body>
+</html>
